@@ -3,7 +3,7 @@ class ApiError extends Error{
         stattusCode,
         message = "something went wrong",
         errors = [],
-        stsck = ""
+        stack = ""
         
     ){
         super(message)
@@ -23,4 +23,4 @@ class ApiError extends Error{
     }
 }
 
-export {ApIError}
+export {ApiError}
