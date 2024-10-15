@@ -34,10 +34,10 @@ const userSchema = new Schema({
         type: string, // Cloudnary URL
         required: true
     },
-    coverImage:{
+    coverImage: {
         type: String, // Cloudnary URL
     },
-    password:{
+    password: {
         type: String,
         required: [true, "Password is required"]
     },
@@ -48,7 +48,7 @@ const userSchema = new Schema({
 
 userSchema.pre("save", async function(next) {
     if (!this.isMoified("password")) return next()
-    this.password = bcryt.hash(this.password, 10)
+    this.password = await bcryt.hash(this.password, 10)
     next()
 })
 
