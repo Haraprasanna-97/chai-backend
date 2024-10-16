@@ -1,6 +1,6 @@
 import mongoose, {Schema} from "mongoose"
 import jwt from "jsonwebtoken"
-import bcryt from "bcryt"
+import bcrypt from "bcrypt"
 
 const userSchema = new Schema({
     watchHistory: [
@@ -10,7 +10,7 @@ const userSchema = new Schema({
         }
     ],
     username: {
-        type: string,
+        type: String,
         required: true,
         unique: true,
         lowercase: true,
@@ -18,20 +18,20 @@ const userSchema = new Schema({
         index: true
     },
     email: {
-        type: string,
+        type: String,
         required: true,
         unique: true,
         lowercase: true,
         trim: true
     },
     fullName: {
-        type: string,
+        type: String,
         required: true,
         trim: true,
         index: true
     },
-    avtar: {
-        type: string, // Cloudnary URL
+    avatar: {
+        type: String, // Cloudnary URL
         required: true
     },
     coverImage: {
@@ -47,8 +47,8 @@ const userSchema = new Schema({
 }, {timestamps: true})
 
 userSchema.pre("save", async function(next) {
-    if (!this.isMoified("password")) return next()
-    this.password = await bcryt.hash(this.password, 10)
+    if (!this.isModified("password")) return next()
+    this.password = await bcrypt.hash(this.password, 10)
     next()
 })
 

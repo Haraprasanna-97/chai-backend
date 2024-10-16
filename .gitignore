@@ -117,4 +117,7 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+
+# My exclusions
+public/temp
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Node
