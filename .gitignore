@@ -120,4 +120,6 @@ dist
 
 # My exclusions
 public/temp
+.vscode
+
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Node
