@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.js"
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinarry.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { cookie_options } from "../constants.js";
+import { cookie_options, AvatarFoldername, CoverImageFoldername } from "../constants.js";
 import jwt from "jsonwebtoken";
 
 const generateAccessAndRefreshTokens = async (UserId) => {
@@ -59,8 +59,8 @@ const registerUser = asyncHandler( async (req, res) => {
         throw new ApiError(400,"Avatar file is required")
     }
     
-    const avatar = await uploadOnCloudinary("Avatars", avatarLocalPath)
-    const coverImage = await uploadOnCloudinary("Cover Images", coverImageLocalPath)
+    const avatar = await uploadOnCloudinary(AvatarFoldername, avatarLocalPath)
+    const coverImage = await uploadOnCloudinary(CoverImageFoldername , coverImageLocalPath)
     
     if (!avatar) {
         throw new ApiError(400,"Avatar file is required")
@@ -188,9 +188,120 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 })
 
+const changeCurrentUserPassword = asyncHandler(async (req, res) => {
+    const {oldPassword, newPassword} = req.body
+
+    const user = await User.findById(req.user?._id)
+
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+
+    if (!isPasswordCorrect) {
+        throw new ApiError(400, "Invalid old password")
+    }
+
+    user.password = newPassword
+    await user.save({validateBeforeSave : false})
+
+    return res
+    .status(200)
+    .json(new ApiResponse(300, {}, "Password changed successfully"))
+})
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,req.User,"User details fetched successfully")
+    )
+})
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+
+    const {fullName, email } = req.body
+
+    if (!fullName || !email) {
+        throw new ApiError(400, "All fields are required")   
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{ email, fullName}
+        },
+        {new: true}
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, user, "Account details updated successfully")
+    )
+})
+
+const updateUserAvatar = asyncHandler(async (req, res) => {
+    const avatarLocalPath = req.file?.path
+
+    if(!avatarLocalPath){
+        throw new ApiError(400,"Avtar file is missimg");
+    }
+
+    const avatar = await uploadOnCloudinary(AvatarFoldername, avatarLocalPath)
+
+    if (!avatar.url) {
+        throw new ApiError(400,"Error while uploding the avatar")
+    }
+    
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: { avatar: avatar.url }
+        },
+        {new: true}
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(
+        new ApiError(200, user, "Avatar updated successfully")
+    )
+})
+
+const updateUserCoverImage = asyncHandler(async (req, res) => {
+    const coverImageLocalPath = req.file?.path
+
+    if(!coverImageLocalPath){
+        throw new ApiError(400,"Cover image file is missimg");
+    }
+
+    const coverImage = await uploadOnCloudinary(CoverImageFoldername, coverImageLocalPath)
+
+    if (!coverImage.url) {
+        throw new ApiError(400,"Error while uploding the avatar")
+    }
+    
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: { coverImage: coverImage.url }
+        },
+        {new: true}
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(
+        new ApiError(200, user, "Cover image updated successfully")
+    )
+})
+
 export {
     registerUser,
     loginUser,
     logoutUser,
-    refreshAccessToken
+    refreshAccessToken,
+    changeCurrentUserPassword,
+    getCurrentUser,
+    updateAccountDetails,
+    updateUserAvatar,
+    updateUserCoverImage
 }
