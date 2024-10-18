@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js"
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinarry.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { cookie_options } from "../constants.js";
 import jwt from "jsonwebtoken";
 
 const generateAccessAndRefreshTokens = async (UserId) => {
@@ -120,15 +121,10 @@ const loginUser = asyncHandler(async (req, res) => {
         "-password -refreshToken"
     )
 
-    const options = {
-        httpOnly: true,
-        secure: true
-    }
-
     return res
     .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, cookie_options)
+    .cookie("refreshToken", refreshToken, cookie_options)
     .json(
         new ApiResponse(200,
             {
@@ -152,15 +148,10 @@ const logoutUser = asyncHandler(async (req, res) => {
         }
     )
 
-    const options = {
-        httpOnly: true,
-        secure: true
-    }
-
     return res
     .status(200)
-    .clearCookie("accessToken", options)
-    .clearCookie("refreshToken", options)
+    .clearCookie("accessToken", cookie_options)
+    .clearCookie("refreshToken", cookie_options)
     .json(new ApiResponse(200,{},"User logged out"))
 })
 
@@ -184,19 +175,14 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             throw new ApiError(400, "Refresh toen is either expired or used");
         }
     
-        const options = {
-            httpOnly: true,
-            secure: true
-        }
-    
         const {accessToken, newRefreshToken} = generateAccessAndRefreshTokens(user._id)
     
     
         return res
         .status(200)
-        .clearCookie("accessToken", accessToken , options)
-        .clearCookie("refreshToken", newRefreshToken , options)
-        .json(new ApiResponse(200,{accessToken, refreshToken : refreshToken},"Access token refereshed"))
+        .clearCookie("accessToken", accessToken , cookie_options)
+        .clearCookie("refreshToken", newRefreshToken , cookie_options)
+        .json(new ApiResponse(200,{accessToken, refreshToken : newRefreshToken},"Access token refereshed"))
     } catch (error) {
         throw new ApiError(401,error?.message || "Invalid refresh token");
     }
