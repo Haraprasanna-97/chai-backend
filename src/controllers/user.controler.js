@@ -1,9 +1,9 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js" 
 import { User } from "../models/user.model.js"
-import { uploadOnCloudinary } from "../utils/cloudinarry.js";
+import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinarry.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { cookie_options, AvatarFoldername, CoverImageFoldername } from "../constants.js";
+import { cookie_options, AvatarFolderName, CoverImageFolderName } from "../constants.js";
 import jwt from "jsonwebtoken";
 
 const generateAccessAndRefreshTokens = async (UserId) => {
@@ -59,8 +59,8 @@ const registerUser = asyncHandler( async (req, res) => {
         throw new ApiError(400,"Avatar file is required")
     }
     
-    const avatar = await uploadOnCloudinary(AvatarFoldername, avatarLocalPath)
-    const coverImage = await uploadOnCloudinary(CoverImageFoldername , coverImageLocalPath)
+    const avatar = await uploadOnCloudinary(AvatarFolderName, avatarLocalPath)
+    const coverImage = await uploadOnCloudinary(CoverImageFolderName , coverImageLocalPath)
     
     if (!avatar) {
         throw new ApiError(400,"Avatar file is required")
@@ -245,12 +245,18 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
         throw new ApiError(400,"Avtar file is missimg");
     }
 
-    const avatar = await uploadOnCloudinary(AvatarFoldername, avatarLocalPath)
+    const avatar = await uploadOnCloudinary(AvatarFolderName, avatarLocalPath)
 
     if (!avatar.url) {
         throw new ApiError(400,"Error while uploding the avatar")
     }
-    
+
+    const oldAvatarCloudinaryURL = req.user.avatar
+
+    if (!oldAvatarCloudinaryURL) {
+        throw new ApiError(400,"No avatar set in this account")
+    }
+
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -258,6 +264,9 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
         },
         {new: true}
     ).select("-password")
+
+    const deletionInfo = await deleteFromCloudinary(AvatarFolderName, oldAvatarCloudinaryURL)
+    console.log(deletionInfo);
 
     return res
     .status(200)
@@ -273,12 +282,18 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
         throw new ApiError(400,"Cover image file is missimg");
     }
 
-    const coverImage = await uploadOnCloudinary(CoverImageFoldername, coverImageLocalPath)
+    const coverImage = await uploadOnCloudinary(CoverImageFolderName, coverImageLocalPath)
 
     if (!coverImage.url) {
         throw new ApiError(400,"Error while uploding the avatar")
     }
     
+    const oldCoverImageCloudinaryURL = req.user.coverImage
+
+    if (!oldCoverImageCloudinaryURL) {
+        throw new ApiError(400,"No avatar set in this account")
+    }
+
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -286,6 +301,9 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
         },
         {new: true}
     ).select("-password")
+
+    const deletionInfo = await deleteFromCloudinary(CoverImageFolderName, oldCoverImageCloudinaryURL)
+    console.log(deletionInfo);
 
     return res
     .status(200)

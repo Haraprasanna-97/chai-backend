@@ -5,6 +5,6 @@ export const cookie_options = {
     secure: true
 }
 
-export const Avatar_Folder_name : "Avatars"
-export const CoverImage_Folder_name : "Cover Images"
-export const Video_Folder_name : "Cover Images"
+export const AvatarFolderName = "Avatars"
+export const CoverImageFolderName = "Cover Images"
+export const VideoFolderName = "Cover Images"
