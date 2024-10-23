@@ -5,6 +5,7 @@ import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinarry.j
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { cookie_options, AvatarFolderName, CoverImageFolderName } from "../constants.js";
 import jwt from "jsonwebtoken";
+import { Mongoose } from "mongoose";
 
 const generateAccessAndRefreshTokens = async (UserId) => {
     try {
@@ -367,7 +368,6 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
             avatar: 1,
             coverImage: 1,
             email: 1,
-
         }
     ])
 
@@ -383,6 +383,56 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     )
 })
 
+const getWatchHistory = asyncHandler(async (req, res) => {
+    const user = await User.aggregate([
+        {
+            $match:{
+               _id: Mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "watchHistory",
+                foreignField: "_id",
+                as: "watchHistory",
+                pipeline:[
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        username: 1,
+                                        svatar: 1
+                                    }
+                                },
+                                {
+                                    $addFields:{
+                                        owner: {
+                                            $first: "$owner "
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, user[0].watchHistory, "Watch history fetched successfully")
+    )
+})
+
 export {
     registerUser,
     loginUser,
@@ -393,5 +443,6 @@ export {
     updateAccountDetails,
     updateUserAvatar,
     updateUserCoverImage,
-    getUserChannelProfile
+    getUserChannelProfile,
+    getWatchHistory
 }
