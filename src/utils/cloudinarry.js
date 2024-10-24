@@ -29,10 +29,9 @@ const deleteFromCloudinary = async (folder_name, mediaURL) => {
     if (!mediaURL) return null
 
     try {
-        const filename = extractFileNameFromUrl(folder_name, mediaURL)
+        const filename = extractFileNameFromUrl(mediaURL)
     
-        const response = await cloudinary.uploader.destroy(`${folder_name}/${filename}`) // Filename is the publicID
-        console.log(response);
+        const response = await cloudinary.uploader.destroy(`${folder_name}/${filename}`) // Filename is the publicID;
     
         return response
     }
@@ -42,7 +41,7 @@ const deleteFromCloudinary = async (folder_name, mediaURL) => {
     }
 }
 
-const extractPublicIdFromUrl = (url) => {
+const extractFileNameFromUrl = (url) => {
     // Assuming the URL is in the format: https://res.cloudinary.com/<cloud_name>/image/upload/<public_id>.<format>
     const parts = url.split('/');
     const publicIdWithFormat = parts[parts.length - 1];

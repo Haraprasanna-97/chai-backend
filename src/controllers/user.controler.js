@@ -5,7 +5,7 @@ import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinarry.j
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { cookie_options, AvatarFolderName, CoverImageFolderName } from "../constants.js";
 import jwt from "jsonwebtoken";
-import { Mongoose } from "mongoose";
+import mongoose from "mongoose";
 
 const generateAccessAndRefreshTokens = async (UserId) => {
     try {
@@ -140,8 +140,8 @@ const logoutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set: {
-                refreshToken : undefined
+            $unset: {
+                refreshToken : 1
             }
         },
         {
@@ -157,7 +157,8 @@ const logoutUser = asyncHandler(async (req, res) => {
 })
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-    const incommingRefreshToken = req.cookies.accessToken || req.body.refreshToken
+    const incommingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+    console.log("Token : ", incommingRefreshToken);
     
     if (!incommingRefreshToken) {
         throw new ApiError(401, "Unauthorized request")
@@ -205,14 +206,14 @@ const changeCurrentUserPassword = asyncHandler(async (req, res) => {
 
     return res
     .status(200)
-    .json(new ApiResponse(300, {}, "Password changed successfully"))
+    .json(new ApiResponse(200, {}, "Password changed successfully"))
 })
 
 const getCurrentUser = asyncHandler(async (req, res) => {
     return res
     .status(200)
     .json(
-        new ApiResponse(200,req.User,"User details fetched successfully")
+        new ApiResponse(200,req.user,"User details fetched successfully")
     )
 })
 
@@ -266,13 +267,12 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
         {new: true}
     ).select("-password")
 
-    const deletionInfo = await deleteFromCloudinary(AvatarFolderName, oldAvatarCloudinaryURL)
-    console.log(deletionInfo);
+    await deleteFromCloudinary(AvatarFolderName, oldAvatarCloudinaryURL)
 
     return res
     .status(200)
     .json(
-        new ApiErApiResponseror(200, user, "Avatar updated successfully")
+        new ApiResponse(200, user, "Avatar updated successfully")
     )
 })
 
@@ -303,8 +303,8 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
         {new: true}
     ).select("-password")
 
-    const deletionInfo = await deleteFromCloudinary(CoverImageFolderName, oldCoverImageCloudinaryURL)
-    console.log(deletionInfo);
+    await deleteFromCloudinary(CoverImageFolderName, oldCoverImageCloudinaryURL)
+
     return res
     .status(200)
 
@@ -360,26 +360,28 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
             }
         },
         {
-            fullName: 1,
-            username: 1,
-            subscribersCount: 1,
-            channelsSubscribedToCount: 1,
-            isSubscribed: 1,
-            avatar: 1,
-            coverImage: 1,
-            email: 1,
+            $project:{
+                fullName: 1,
+                username: 1,
+                subscribersCount: 1,
+                channelsSubscribedToCount: 1,
+                isSubscribed: 1,
+                avatar: 1,
+                coverImage: 1,
+                email: 1
+            }
         }
     ])
 
-    console.log(`chennel : ${channel}`)
+    console.log("channel : ", channel)
 
-    if (!chennel?.length) {
+    if (!channel?.length) {
         throw new ApiError(404, "chennel does not exist");
     }
     return res
     .status(200)
     .json(
-        new ApiResponse(200, chennel[0], "user channel fetched successfully")
+        new ApiResponse(200, channel[0], "user channel fetched successfully")
     )
 })
 
@@ -387,7 +389,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     const user = await User.aggregate([
         {
             $match:{
-               _id: Mongoose.Types.ObjectId(req.user._id)
+               _id: new mongoose.Types.ObjectId(req.user._id)
             }
         },
         {
