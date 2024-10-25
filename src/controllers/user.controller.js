@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js" 
 import { User } from "../models/user.model.js"
-import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinarry.js";
+import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { cookie_options, AvatarFolderName, CoverImageFolderName } from "../constants.js";
 import jwt from "jsonwebtoken";
@@ -266,12 +266,19 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
         {new: true}
     ).select("-password")
 
-    await deleteFromCloudinary(AvatarFolderName, oldAvatarCloudinaryURL)
+    const deletionInfo = await deleteFromCloudinary(AvatarFolderName, oldAvatarCloudinaryURL)
+
+    const deletionMessage = ""
+    console.log(deletionInfo);
+    
+    if (deletionInfo.status == "Ok") {
+        deletionMessage = "Old avatar deleted successfully. "
+    }
 
     return res
     .status(200)
     .json(
-        new ApiResponse(200, user, "Avatar updated successfully")
+        new ApiResponse(200, user, deletionMessage + "New avatar updated successfully.")
     )
 })
 
