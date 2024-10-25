@@ -268,10 +268,9 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 
     const deletionInfo = await deleteFromCloudinary(AvatarFolderName, oldAvatarCloudinaryURL)
 
-    const deletionMessage = ""
-    console.log(deletionInfo);
+    let deletionMessage = ""
     
-    if (deletionInfo.status == "Ok") {
+    if (deletionInfo.result == "ok") {
         deletionMessage = "Old avatar deleted successfully. "
     }
 
@@ -309,13 +308,18 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
         {new: true}
     ).select("-password")
 
-    await deleteFromCloudinary(CoverImageFolderName, oldCoverImageCloudinaryURL)
+    const deletionInfo = await deleteFromCloudinary(CoverImageFolderName, oldCoverImageCloudinaryURL)
+
+    let deletionMessage = ""
+    
+    if (deletionInfo.result == "ok") {
+        deletionMessage = "Old cover image deleted successfully. "
+    }
 
     return res
     .status(200)
-
     .json(
-        new ApiResponse(200, user, "Cover image updated successfully")
+        new ApiResponse(200, user, deletionMessage + "new cover image updated successfully")
     )
 })
 
