@@ -158,7 +158,6 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
     const incommingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
-    console.log("Token : ", incommingRefreshToken);
     
     if (!incommingRefreshToken) {
         throw new ApiError(401, "Unauthorized request")
@@ -372,8 +371,6 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
             }
         }
     ])
-
-    console.log("channel : ", channel)
 
     if (!channel?.length) {
         throw new ApiError(404, "chennel does not exist");
