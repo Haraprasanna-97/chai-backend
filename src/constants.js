@@ -7,4 +7,5 @@ export const cookie_options = {
 
 export const AvatarFolderName = "Avatars"
 export const CoverImageFolderName = "Cover Images"
-export const VideoFolderName = "Cover Images"
+export const VideoFolderName = "Videos"
+export const ThumbnailFolderName = "Thumbnails"
