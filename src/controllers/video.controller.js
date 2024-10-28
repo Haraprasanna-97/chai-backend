@@ -81,15 +81,20 @@ const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     //TODO: get video by id
 
+    // Send an error message if userId is invalid
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(404, "The video you want to access does not exist")
+    }
+
     // Get user from the database
     const videoDetails = await Video.findById(videoId)
 
     // If details is not available send an error message
     if(!videoDetails){
-        throw new ApiError(500,"Unable to fetch video details")
+        throw new ApiError(400,"Unable to fetch video details")
     }
 
-    // Send the vodeo details
+    // Send the viodeo details
     return res.status(200)
     .json(
         new ApiResponse(200,videoDetails,"Video details fetched succesfully")
