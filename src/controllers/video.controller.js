@@ -73,7 +73,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     return res
     .status(201)
     .json(
-        new ApiResponse(201,savedData,"Video publihed successfully")
+        new ApiResponse(201,videoDetails,"Video publihed successfully")
     )
 })
 
@@ -91,7 +91,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 
     // If details is not available send an error message
     if(!videoDetails){
-        throw new ApiError(400,"Unable to fetch video details")
+        throw new ApiError(400,"The video you want to access does not exist")
     }
 
     // Send the viodeo details
