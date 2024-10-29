@@ -4,7 +4,7 @@ import {User} from "../models/user.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
-import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import {deleteFromCloudinary, uploadOnCloudinary} from "../utils/cloudinary.js"
 import { ThumbnailFolderName, VideoFolderName } from "../constants.js"
 
 
@@ -105,6 +105,69 @@ const updateVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     //TODO: update video details like title, description, thumbnail
 
+    // Send an error message if videoId is invalid
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(404, "The video you want to modify the details of does not exist");
+    }
+
+    const {title, description} = req.body
+
+    // Send an error message if title and description are not provided in request body
+    if (!(title || description)) {
+        throw new ApiError(400, "Title and description is required")
+    }
+
+    // Get the thumbnailLocalPath with the file recived from the request
+    let thumbnailLocalPath = req.file?.path
+
+    // Send an error meassage if thumbnail is not provided in request files
+    if (!thumbnailLocalPath) {
+        throw new ApiError(400,"Thumbnail file is required")
+    }
+
+    // Upload new thumbnail to cloudinaeey
+    const thumbnail = await uploadOnCloudinary(ThumbnailFolderName, thumbnailLocalPath)
+
+    // Send an error message when thumbnail does not contain an URL
+    if (!thumbnail.url) {
+        throw new ApiError(500, "Thumbnail update failed please try again layter")
+    }
+
+    // get the URL of the old thumbnail
+    const thumbnailFromDB = await Video.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(videoId)
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                thumbnail: 1
+            }
+        }
+    ])
+
+    const oldThumbnail = thumbnailFromDB[0].thumbnail
+
+    // Create an object to save the new deetails
+    const newDetails = {
+        thumbnail : thumbnail.url,
+        title,
+        description
+    }
+
+    const updatedDetails = await Video.findByIdAndUpdate(videoId, newDetails,
+        {
+            new: true
+        }
+    )
+
+    await deleteFromCloudinary(ThumbnailFolderName,oldThumbnail)
+    
+    return res
+    .status(200)
+    .json(new ApiResponse(200,updatedDetails,"Video details updated succesfully."))
 })
 
 const deleteVideo = asyncHandler(async (req, res) => {
