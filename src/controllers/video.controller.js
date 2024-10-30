@@ -221,30 +221,25 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
         throw new ApiError(400, "The video you want to update does not exist")
     }
 
-    // Get the corrent published State
-    const publishedState = await Video.findById(videoId,{
-        isPublished:1,
-        _id: 0
-    })
-
     // Negate the published state and save to DB
-    const currentStaate = await Video.findByIdAndUpdate(videoId,{
-        $set: {
-            isPublished:!publishedState.isPublished
+    const published = await Video.findByIdAndUpdate(videoId,[
+        {
+            $set : {
+                isPublished : {
+                    $eq : [false, "$isPublished"]
+                }
+            }
         }
-    },
+    ],
     {
-        new : true,
-        projection:{
-            isPublished : 1,
-            _id : 0
-        }
-    })
+        new: true
+        // Remove the the fields that need not be sent to the frontend 
+    }).select("-_id isPublished")
 
     return res
     .status(200)
     .json(
-        new ApiResponse(200, currentStaate, "Publish status updated")
+        new ApiResponse(200, published, "Publish status updated")
     )
 })
 
