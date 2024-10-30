@@ -52,7 +52,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     // Uplod thumbnail file to cloudinarry
     const thumbnail = await uploadOnCloudinary(ThumbnailFolderName, thumbnailLocalPath)
 
-    // Create an object whic will be saved to the database   
+    // Create an object whic will be saved to the database
     const videoDetailsToSave = {
         title,
         description,
@@ -201,7 +201,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
     // Construct a message to be sent to frontend
     let meassage = "Failed to delete video"
-    
+
     if (thumbnailDeltedResponse.result == "ok" && videoFileDeltedResponse.result == "ok") {
         meassage = "Video deleted successfully"
     }
@@ -215,6 +215,37 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
     const { videoId } = req.params
+
+    // Send an error message if videoId is invalid
+    if (!isValidObjectId(videoId)) {
+        throw new ApiError(400, "The video you want to update does not exist")
+    }
+
+    // Get the corrent published State
+    const publishedState = await Video.findById(videoId,{
+        isPublished:1,
+        _id: 0
+    })
+
+    // Negate the published state and save to DB
+    const currentStaate = await Video.findByIdAndUpdate(videoId,{
+        $set: {
+            isPublished:!publishedState.isPublished
+        }
+    },
+    {
+        new : true,
+        projection:{
+            isPublished : 1,
+            _id : 0
+        }
+    })
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, currentStaate, "Publish status updated")
+    )
 })
 
 export {
