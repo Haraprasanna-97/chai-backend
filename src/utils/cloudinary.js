@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
+import { AvatarFolderName, CoverImageFolderName, ThumbnailFolderName } from "../constants.js";
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -28,10 +29,16 @@ const uploadOnCloudinary = async (folder_name, localFilePath) => {
 const deleteFromCloudinary = async (folder_name, mediaURL) => {
     if (!mediaURL) return null
 
+    let resource_type = "video"
+    
+    if ([AvatarFolderName, CoverImageFolderName, ThumbnailFolderName].some((folder) => folder === folder_name)) {
+        resource_type = "image"
+    }
+
     try {
         const filename = extractFileNameFromUrl(mediaURL)
     
-        const response = await cloudinary.uploader.destroy(`${folder_name}/${filename}`) // Filename is the publicID;
+        const response = await cloudinary.uploader.destroy(`${folder_name}/${filename}`,{ resource_type }) // Filename is the publicID;
     
         return response
     }

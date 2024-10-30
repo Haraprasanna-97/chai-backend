@@ -1,10 +1,10 @@
-import mongoose, {isValidObjectId} from "mongoose"
-import {Video} from "../models/video.model.js"
-import {User} from "../models/user.model.js"
-import {ApiError} from "../utils/ApiError.js"
-import {ApiResponse} from "../utils/ApiResponse.js"
-import {asyncHandler} from "../utils/asyncHandler.js"
-import {deleteFromCloudinary, uploadOnCloudinary} from "../utils/cloudinary.js"
+import mongoose, { isValidObjectId } from "mongoose"
+import { Video } from "../models/video.model.js"
+import { User } from "../models/user.model.js"
+import { ApiError } from "../utils/ApiError.js"
+import { ApiResponse } from "../utils/ApiResponse.js"
+import { asyncHandler } from "../utils/asyncHandler.js"
+import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ThumbnailFolderName, VideoFolderName } from "../constants.js"
 
 
@@ -14,7 +14,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
 })
 
 const publishAVideo = asyncHandler(async (req, res) => {
-    const { title, description} = req.body
+    const { title, description } = req.body
     // TODO: get video, upload to cloudinary, create video
 
     // Check if title and description are provided in request body
@@ -28,53 +28,53 @@ const publishAVideo = asyncHandler(async (req, res) => {
     if (req.files && Array.isArray(req.files.videoFile) && req.files.videoFile.length > 0) {
         videoLocalPath = req.files.videoFile[0].path
     }
-    
+
     // Send an error message if video file is not sent by the user
     if (!videoLocalPath) {
         throw new ApiError(400, "Video file is requitred")
     }
-    
+
     // Check if thumbnail file is provided in the request
     let thumbnailLocalPath
-    
+
     if (req.files && Array.isArray(req.files.thumbnail) && req.files.thumbnail.length > 0) {
         thumbnailLocalPath = req.files.thumbnail[0].path
     }
-    
+
     // Send an error message if thumbnail file is not sent by the user
     if (!thumbnailLocalPath) {
         throw new ApiError(400, "Thunbnail file is requitred")
     }
-    
+
     // Uplod video file to cloudinarry
     const videoFile = await uploadOnCloudinary(VideoFolderName, videoLocalPath)
-    
+
     // Uplod thumbnail file to cloudinarry
-    const thumbnail =  await uploadOnCloudinary(ThumbnailFolderName, thumbnailLocalPath)
+    const thumbnail = await uploadOnCloudinary(ThumbnailFolderName, thumbnailLocalPath)
 
     // Create an object whic will be saved to the database   
     const videoDetailsToSave = {
         title,
         description,
-        videoFile : videoFile.url,
-        thumbnail : thumbnail.url,
-        duration : Math.floor(videoFile.duration),
-        owner : req.user._id
+        videoFile: videoFile.url,
+        thumbnail: thumbnail.url,
+        duration: Math.floor(videoFile.duration),
+        owner: req.user._id
     }
-    
+
     // Save the user object to database
     const videoDetails = await Video.create(videoDetailsToSave)
 
     if (!videoDetails) {
-        throw new ApiError(500,"Video publishing failed")
+        throw new ApiError(500, "Video publishing failed")
     }
 
     // send the uswe details in response
     return res
-    .status(201)
-    .json(
-        new ApiResponse(201,videoDetails,"Video publihed successfully")
-    )
+        .status(201)
+        .json(
+            new ApiResponse(201, videoDetails, "Video publihed successfully")
+        )
 })
 
 const getVideoById = asyncHandler(async (req, res) => {
@@ -82,7 +82,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     //TODO: get video by id
 
     // Send an error message if userId is invalid
-    if(!isValidObjectId(videoId)){
+    if (!isValidObjectId(videoId)) {
         throw new ApiError(404, "The video you want to access does not exist")
     }
 
@@ -90,15 +90,15 @@ const getVideoById = asyncHandler(async (req, res) => {
     const videoDetails = await Video.findById(videoId)
 
     // If details is not available send an error message
-    if(!videoDetails){
-        throw new ApiError(400,"The video you want to access does not exist")
+    if (!videoDetails) {
+        throw new ApiError(400, "The video you want to access does not exist")
     }
 
     // Send the viodeo details
     return res.status(200)
-    .json(
-        new ApiResponse(200,videoDetails,"Video details fetched succesfully")
-    )
+        .json(
+            new ApiResponse(200, videoDetails, "Video details fetched succesfully")
+        )
 })
 
 const updateVideo = asyncHandler(async (req, res) => {
@@ -106,11 +106,11 @@ const updateVideo = asyncHandler(async (req, res) => {
     //TODO: update video details like title, description, thumbnail
 
     // Send an error message if videoId is invalid
-    if(!isValidObjectId(videoId)){
+    if (!isValidObjectId(videoId)) {
         throw new ApiError(404, "The video you want to modify the details of does not exist");
     }
 
-    const {title, description} = req.body
+    const { title, description } = req.body
 
     // Send an error message if title and description are not provided in request body
     if (!(title || description)) {
@@ -122,7 +122,7 @@ const updateVideo = asyncHandler(async (req, res) => {
 
     // Send an error meassage if thumbnail is not provided in request files
     if (!thumbnailLocalPath) {
-        throw new ApiError(400,"Thumbnail file is required")
+        throw new ApiError(400, "Thumbnail file is required")
     }
 
     // Upload new thumbnail to cloudinaeey
@@ -152,7 +152,7 @@ const updateVideo = asyncHandler(async (req, res) => {
 
     // Create an object to save the new deetails
     const newDetails = {
-        thumbnail : thumbnail.url,
+        thumbnail: thumbnail.url,
         title,
         description
     }
@@ -163,16 +163,54 @@ const updateVideo = asyncHandler(async (req, res) => {
         }
     )
 
-    await deleteFromCloudinary(ThumbnailFolderName,oldThumbnail)
-    
+    await deleteFromCloudinary(ThumbnailFolderName, oldThumbnail)
+
     return res
     .status(200)
-    .json(new ApiResponse(200,updatedDetails,"Video details updated succesfully."))
+    .json(new ApiResponse(200, updatedDetails, "Video details updated succesfully."))
 })
 
 const deleteVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     //TODO: delete video
+
+    // Send an error message if videoId recived is invalid
+    if (!isValidObjectId(videoId)) {
+        throw new ApiError(400, "The video you want to access does not exist")
+    }
+
+    // Get the thumbnail and videoFile obtained after deleting the specific video infornation from the database
+    const deletedVideoInfo = await Video.findByIdAndDelete(videoId, {
+        projection: {
+            thumbnail: 1,
+            videoFile: 1,
+            _id: 0
+        }
+    })
+
+    // Send an error message if video is does not exist
+    if (!deletedVideoInfo) {
+        throw new ApiError(400, "The video you want to delrte does not exist")
+    }
+
+    const { thumbnail, videoFile } = deletedVideoInfo
+
+    // Using the thunbnail and videoFile recived in the previous step, delete the assets from cloudinarry
+    const thumbnailDeltedResponse = await deleteFromCloudinary(ThumbnailFolderName, thumbnail)
+    const videoFileDeltedResponse = await deleteFromCloudinary(VideoFolderName, videoFile)
+
+    // Construct a message to be sent to frontend
+    let meassage = "Failed to delete video"
+    
+    if (thumbnailDeltedResponse.result == "ok" && videoFileDeltedResponse.result == "ok") {
+        meassage = "Video deleted successfully"
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, {}, meassage)
+    )
 })
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
