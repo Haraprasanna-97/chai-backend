@@ -11,6 +11,59 @@ import { ThumbnailFolderName, VideoFolderName } from "../constants.js"
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
     //TODO: get all videos based on query, sort, pagination
+
+    // Construct the quert onbject
+    const queryObj = {
+        isPublished : true
+    }
+
+    if (query) {
+        queryObj.title = {
+            $regex: query,
+            $options: 'i'
+        }
+    }
+
+    if (userId) {
+        queryObj.owner = mongoose.Types.ObjectId(userId)
+    }
+
+    // Construct the sort obhect
+    const sortObj = {};
+    sortObj[sortBy] = sortType === 'asc' ? 1 : -1;
+
+    // convert Page and limit to numbers
+    const pageNumber = parseInt(page)
+    const limitNumber = parseInt(limit)
+
+    const videos = await Video.aggregate([
+        {
+            $match: queryObj
+        },
+        {
+            $sort: sortObj
+        },
+        {
+            $skip: (pageNumber - 1) * limitNumber
+        },
+        {
+            $limit: limitNumber
+        }
+    ])
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            {
+                totalVideos : videos.length,
+                data : videos,
+                page
+            },
+            "Videos fetched successfully"
+        )
+    )
 })
 
 const publishAVideo = asyncHandler(async (req, res) => {
@@ -166,8 +219,8 @@ const updateVideo = asyncHandler(async (req, res) => {
     await deleteFromCloudinary(ThumbnailFolderName, oldThumbnail)
 
     return res
-    .status(200)
-    .json(new ApiResponse(200, updatedDetails, "Video details updated succesfully."))
+        .status(200)
+        .json(new ApiResponse(200, updatedDetails, "Video details updated succesfully."))
 })
 
 const deleteVideo = asyncHandler(async (req, res) => {
@@ -207,10 +260,10 @@ const deleteVideo = asyncHandler(async (req, res) => {
     }
 
     return res
-    .status(200)
-    .json(
-        new ApiResponse(200, {}, meassage)
-    )
+        .status(200)
+        .json(
+            new ApiResponse(200, {}, meassage)
+        )
 })
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
@@ -222,25 +275,25 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     }
 
     // Negate the published state and save to DB
-    const published = await Video.findByIdAndUpdate(videoId,[
+    const published = await Video.findByIdAndUpdate(videoId, [
         {
-            $set : {
-                isPublished : {
-                    $eq : [false, "$isPublished"]
+            $set: {
+                isPublished: {
+                    $eq: [false, "$isPublished"]
                 }
             }
         }
     ],
-    {
-        new: true
-        // Remove the the fields that need not be sent to the frontend 
-    }).select("-_id isPublished")
+        {
+            new: true
+            // Remove the the fields that need not be sent to the frontend 
+        }).select("-_id isPublished")
 
     return res
-    .status(200)
-    .json(
-        new ApiResponse(200, published, "Publish status updated")
-    )
+        .status(200)
+        .json(
+            new ApiResponse(200, published, "Publish status updated")
+        )
 })
 
 export {
