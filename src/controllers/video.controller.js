@@ -14,7 +14,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
     // Construct the quert onbject
     const queryObj = {
-        isPublished : true
+        isPublished: true
     }
 
     if (query) {
@@ -52,18 +52,18 @@ const getAllVideos = asyncHandler(async (req, res) => {
     ])
 
     return res
-    .status(200)
-    .json(
-        new ApiResponse(
-            200,
-            {
-                totalVideos : videos.length,
-                data : videos,
-                page
-            },
-            "Videos fetched successfully"
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    totalVideos: videos.length,
+                    data: videos,
+                    page
+                },
+                "Videos fetched successfully"
+            )
         )
-    )
 })
 
 const publishAVideo = asyncHandler(async (req, res) => {
@@ -210,7 +210,11 @@ const updateVideo = asyncHandler(async (req, res) => {
         description
     }
 
-    const updatedDetails = await Video.findByIdAndUpdate(videoId, newDetails,
+    const updatedDetails = await Video.findByIdAndUpdate(videoId, [
+        {
+            $set: newDetails
+        }
+    ],
         {
             new: true
         }
