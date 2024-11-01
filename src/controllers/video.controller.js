@@ -41,6 +41,11 @@ const getAllVideos = asyncHandler(async (req, res) => {
             $match: queryObj
         },
         {
+            $project: {
+                __v : 0
+            }
+        },
+        {
             $sort: sortObj
         },
         {
@@ -57,8 +62,8 @@ const getAllVideos = asyncHandler(async (req, res) => {
             new ApiResponse(
                 200,
                 {
-                    totalVideos: videos.length,
                     data: videos,
+                    totalVideos: videos.length,
                     page
                 },
                 "Videos fetched successfully"
