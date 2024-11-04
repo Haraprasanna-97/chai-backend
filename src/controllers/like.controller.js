@@ -13,25 +13,20 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
         throw new ApiError(404, "The video you want to like doe not exist")
     }
 
+    let document
+
     // Add / remove the videoId in the video field of the like schema
-    const videoToLike = await Like.findOne({
-        video: new mongoose.Types.ObjectId(videoId),
+    document = await Like.findOneAndDelete({
+        video: new mongoose.Types.ObjectId(videoId)
     })
 
-    let info
-
-    if (!videoToLike) {
-        info = await Like.insertMany([
+    if (!document) {
+        document = await Like.insertMany([
             {
                 video: new mongoose.Types.ObjectId(videoId),
                 likedBy: new mongoose.Types.ObjectId(req.user._id)
             }
         ])
-    }
-    else {
-        info = await Like.deleteOne({
-            video: new mongoose.Types.ObjectId(videoId),
-        })
     }
 
     // send a response eth liked set to true
