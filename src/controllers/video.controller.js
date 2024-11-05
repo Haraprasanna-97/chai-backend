@@ -252,7 +252,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
     // Send an error message if video is does not exist
     if (!deletedVideoInfo) {
-        throw new ApiError(400, "The video you want to delrte does not exist")
+        throw new ApiError(400, "The video you want to delete does not exist")
     }
 
     const { thumbnail, videoFile } = deletedVideoInfo
