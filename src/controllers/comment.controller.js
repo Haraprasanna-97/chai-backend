@@ -80,10 +80,52 @@ const addComment = asyncHandler(async (req, res) => {
 
 const updateComment = asyncHandler(async (req, res) => {
     // TODO: update a comment
+    
+    // get the comment
+    const {commentId} = req.params
+
+    // send an error message if comment does not exist
+    if (!isValidObjectId(commentId)) {
+        new ApiError(404,"Comment does not exist.")
+    }
+    
+    // Save the updated comment in the database
+    const info = await Comment.findByIdAndUpdate(commentId, {
+        $set : {
+            content : req.body.comment
+        }
+    })
+
+    console.log(info);
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,info,"Comment updated successfully")
+    )
 })
 
 const deleteComment = asyncHandler(async (req, res) => {
     // TODO: delete a comment
+
+     // get the comment
+     const {commentId} = req.params
+
+     // send an error message if comment does not exlst
+     if (!isValidObjectId(commentId)) {
+         new ApiError(404,"Comment does not exist.")
+     }
+
+     // Delete the comment from the database
+    const info = await Comment.findByIdAndDelete(commentId)
+
+    console.log(info);
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,info,"Comment updated successfully")
+    )
 })
 
 export {
