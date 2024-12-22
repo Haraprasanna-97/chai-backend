@@ -35,22 +35,50 @@ const toggleSubscription = asyncHandler(async (req, res) => {
         return res
             .status(200)
             .json(
-                new ApiResponse(200, {subscribed : false}, "Unsubscribed")
+                new ApiResponse(200, { subscribed: false }, "Unsubscribed")
             )
     }
     else {
         await Subscription.insertMany([doc])
         return res
-        .status(200)
-        .json(
-            new ApiResponse(200, {subscribed : true}, "Subscribed")
-        )
+            .status(200)
+            .json(
+                new ApiResponse(200, { subscribed: true }, "Subscribed")
+            )
     }
 })
 
 // controller to return subscriber list of a channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     const { channelId } = req.params
+
+    if (!isValidObjectId(channelId)) {
+        throw new ApiError(400, "Invalid channal ID")
+    }
+
+    const subscriberList = await User.aggregate([
+        {
+            '$lookup': {
+                'from': 'subscriptions',
+                'localField': '_id',
+                'foreignField': 'channel',
+                'as': 'subscribers'
+            }
+        },
+        {
+            '$project': {
+                '_id': 0,
+                'avatar': 1,
+                'fullName': 1
+            }
+        }
+    ])
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,subscriberList,"Subscriber list fetched successfully")
+    )
 })
 
 // controller to return channel list to which user has subscribed
