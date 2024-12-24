@@ -4,6 +4,7 @@ import { Subscription } from "../models/subscription.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
+import { json } from "express"
 
 
 const toggleSubscription = asyncHandler(async (req, res) => {
@@ -75,15 +76,75 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     ])
 
     return res
-    .status(200)
-    .json(
-        new ApiResponse(200,subscriberList,"Subscriber list fetched successfully")
-    )
+        .status(200)
+        .json(
+            new ApiResponse(200, subscriberList, "Subscriber list fetched successfully")
+        )
 })
 
 // controller to return channel list to which user has subscribed
 const getSubscribedChannels = asyncHandler(async (req, res) => {
     const { subscriberId } = req.params
+
+    if (!isValidObjectId(subscriberId)) {
+        throw new ApiError(400, "Invalid subscriber ID")
+    }
+
+    const channelList = await User.aggregate([
+        {
+            '$lookup': {
+                'from': 'subscriptions',
+                'localField': '_id',
+                'foreignField': 'subscriber',
+                'as': 'SubscribedTo'
+            }
+        },
+        {
+            '$unwind': {
+                'path': '$SubscribedTo'
+            }
+        },
+        {
+            '$match': {
+                'SubscribedTo.subscriber': new mongoose.Types.ObjectId(subscriberId)
+            }
+        },
+        {
+            '$addFields': {
+                'SubscribedTo': '$SubscribedTo.channel'
+            }
+        },
+        {
+            '$lookup': {
+                'from': 'users',
+                'localField': 'SubscribedTo',
+                'foreignField': '_id',
+                'as': 'SubscribedTo',
+                'pipeline': [
+                    {
+                        '$project': {
+                            'email': 1,
+                            'fullName': 1,
+                            'avatar': 1,
+                            'username': 1
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            '$project': {
+                '_id': 0,
+                'SubscribedTo': 1
+            }
+        }
+    ])
+
+    return res
+    .status(200)
+    ,json(
+        new ApiResponse(200, channelList, "Channel list fetched successfully")
+    )
 })
 
 export {
