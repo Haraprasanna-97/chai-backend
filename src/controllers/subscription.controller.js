@@ -57,21 +57,37 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid channal ID")
     }
 
-    const subscriberList = await User.aggregate([
+    const subscriberList = await Subscription.aggregate([
+        {
+            '$match': {
+                'channel': new mongoose.Types.ObjectId(channelId)
+            }
+        },
         {
             '$lookup': {
-                'from': 'subscriptions',
-                'localField': '_id',
-                'foreignField': 'channel',
-                'as': 'subscribers'
+                'from': 'users',
+                'localField': 'subscriber',
+                'foreignField': '_id',
+                'as': 'subscriber',
+                'pipeline': [
+                    {
+                        '$project': {
+                            '_id': 0,
+                            'avatar': 1,
+                            'fullName': 1
+                        }
+                    }
+                ]
             }
         },
         {
             '$project': {
                 '_id': 0,
-                'avatar': 1,
-                'fullName': 1
+                'subscriber': 1
             }
+        },
+        {
+          $unwind: "$subscriber"
         }
     ])
 
@@ -141,10 +157,10 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     ])
 
     return res
-    .status(200)
-    ,json(
-        new ApiResponse(200, channelList, "Channel list fetched successfully")
-    )
+        .status(200)
+        .json(
+            new ApiResponse(200, channelList, "Channel list fetched successfully")
+        )
 })
 
 export {
